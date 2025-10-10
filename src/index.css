@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  
+  body {
+    @apply bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen;
+  }
+}
+
+@layer components {
+  .ai-block {
+    @apply rounded-lg p-4 shadow-lg border-2 transition-all duration-200 hover:scale-105;
+  }
+  
+  .ai-block-purple {
+    @apply bg-gradient-to-r from-ai-purple to-purple-600 text-white border-ai-purple;
+  }
+  
+  .ai-block-pink {
+    @apply bg-gradient-to-r from-ai-pink to-pink-600 text-white border-ai-pink;
+  }
+  
+  .ai-block-orange {
+    @apply bg-gradient-to-r from-ai-orange to-orange-600 text-white border-ai-orange;
+  }
+  
+  .ai-block-green {
+    @apply bg-gradient-to-r from-ai-green to-green-600 text-white border-ai-green;
+  }
+  
+  .ai-block-blue {
+    @apply bg-gradient-to-r from-ai-blue to-blue-600 text-white border-ai-blue;
+  }
+  
+  .ai-block-yellow {
+    @apply bg-gradient-to-r from-ai-yellow to-yellow-600 text-white border-ai-yellow;
+  }
+  
+  .workspace {
+    @apply bg-white rounded-xl shadow-xl border border-gray-200;
+  }
+  
+  .block-palette {
+    @apply bg-gradient-to-b from-gray-50 to-gray-100 rounded-lg border border-gray-200;
+  }
+  
+  .code-output {
+    @apply bg-gray-900 text-green-400 rounded-lg p-4 font-mono text-sm;
+  }
+  
+  .tutorial-card {
+    @apply bg-white rounded-xl shadow-lg border border-gray-200 hover:shadow-xl transition-shadow duration-200;
+  }
+  
+  .floating-animation {
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  .glow-effect {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-ai-purple to-ai-pink bg-clip-text text-transparent;
+  }
+  
+  .bg-pattern {
+    background-image: radial-gradient(circle at 1px 1px, rgba(139, 92, 246, 0.1) 1px, transparent 0);
+    background-size: 20px 20px;
+  }
+} 
