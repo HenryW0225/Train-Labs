@@ -4,7 +4,8 @@ from kagglehub import KaggleDatasetAdapter
 from fastapi import FastAPI, HTTPException
 from typing import Any
 import traceback
-
+import pandas as pd
+import json
 
 """
 from fastapi.middleware.cors import CORSMiddleware
@@ -42,15 +43,19 @@ async def read_datasets(q: str, page: int = 1):
     out_body = []
     try: 
         for dataset in datasets:
-            print(f"{dataset.ref} - {dataset.title}")
+            ref_str = getattr(dataset, "ref", "None")
+            title_str = getattr(dataset, "title", "None")
+            
             out_body.append({
-                "title": getattr(dataset, "title", "None"),
-                "ref": getattr(dataset, "ref", "None"),
+                "title": title_str,
+                "ref": ref_str,
                 "downloadCount": getattr(dataset, "downloadCount", getattr(dataset, "download_count", "None")),
                 "usabilityRating": getattr(dataset, "usabilityRating", getattr(dataset, "usability_rating", "None")),
-                
             })
-
+            
+            
+            if ref_str != "None":
+                DATASET_CACHE[ref_str] = title_str
         return {"datasets": out_body}
     except Exception as e:
         raise HTTPException(status_code = 500, detail = "Kaggle api error: {}".format(e)) #bad request
@@ -151,3 +156,34 @@ async def read_dataset_preview(ref: str, file: str | None = None, lines: int = 1
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error preparing preview: {e}")
+    
+@app.get("/datasets/{ref:path}")
+async def read_dataset(ref: str, file:str):
+    try:
+        df_obj= kagglehub.dataset_load(KaggleDatasetAdapter.PANDAS, ref, file)
+        
+
+
+        if isinstance(df_obj, dict):
+            df = df_obj.get(file, next(iter(df_obj.values())))
+        else:
+            df = df_obj
+        
+        headers = list(df.columns)
+
+        data_arrays = json.loads(df.to_json(orient="values"))
+
+        dataset_name = DATASET_CACHE.get(ref, ref.split("/")[-1])
+
+        return {"dataset": {
+            "name": dataset_name,
+            "headers": headers,
+            "data": data_arrays
+
+        }}
+    except HTTPException:
+        raise
+    except Exception as e:
+        # This will print the exact line that failed in your server terminal!
+        traceback.print_exc() 
+        raise HTTPException(status_code=500, detail=f"Error formatting dataset: {str(e)}")
