@@ -1,7 +1,7 @@
 'use strict';
 // ============================================================================
 // Train Labs — Block Executor
-// Interprets block stacks and runs real ML (KNN, TF.js Neural Networks)
+// Interprets block stacks and runs real ML (KNN, Logistic Regression, K-Means, TF.js Neural Networks)
 // Built-in datasets, NLP utilities, RL simulation
 // ============================================================================
 
@@ -267,6 +267,90 @@ NB.EXECUTOR = (() => {
       }
     }
     predict(x) { return x.reduce((s, v, i) => s + v * (this.weights[i] || 0), this.bias); }
+  }
+
+  // ── Logistic Regression (one-vs-rest for multiclass) ─────────────────────
+  class LogisticRegression {
+    constructor() { this.classifiers = []; this.classes = []; }
+    _sigmoid(z) { return 1 / (1 + Math.exp(-Math.max(-500, Math.min(500, z)))); }
+    _trainBinary(X, yBin, lr = 0.1, epochs = 300) {
+      const n = X.length, f = X[0].length;
+      const weights = new Array(f).fill(0);
+      let bias = 0;
+      for (let e = 0; e < epochs; e++) {
+        let dW = new Array(f).fill(0), dB = 0;
+        X.forEach((x, i) => {
+          const z = x.reduce((s, v, j) => s + v * weights[j], bias);
+          const err = this._sigmoid(z) - yBin[i];
+          x.forEach((v, j) => dW[j] += err * v / n);
+          dB += err / n;
+        });
+        weights.forEach((w, j) => weights[j] = w - lr * dW[j]);
+        bias -= lr * dB;
+      }
+      return { weights, bias };
+    }
+    train(X, Y) {
+      this.classes = [...new Set(Y.map(String))].sort();
+      this.classifiers = this.classes.map(cls => {
+        const yBin = Y.map(y => String(y) === cls ? 1 : 0);
+        return { cls, ...this._trainBinary(X, yBin) };
+      });
+    }
+    _score(x, clf) {
+      return this._sigmoid(x.reduce((s, v, i) => s + v * (clf.weights[i] || 0), clf.bias));
+    }
+    predictProbs(x) {
+      const probs = {};
+      this.classifiers.forEach(clf => { probs[clf.cls] = this._score(x, clf); });
+      const total = Object.values(probs).reduce((s, v) => s + v, 0) || 1;
+      Object.keys(probs).forEach(k => probs[k] /= total);
+      return probs;
+    }
+    predict(x) {
+      const probs = this.predictProbs(x);
+      return Object.entries(probs).reduce((best, [k, v]) => v > best[1] ? [k, v] : best, ['', -1])[0];
+    }
+  }
+
+  // ── K-Means Clustering ───────────────────────────────────────────────────
+  class KMeans {
+    constructor(k) { this.k = k; this.centroids = []; this.labels = []; }
+    train(X) {
+      const k = Math.min(this.k, X.length);
+      const idx = [...Array(X.length).keys()].sort(() => Math.random() - 0.5).slice(0, k);
+      this.centroids = idx.map(i => [...X[i]]);
+      this.labels = new Array(X.length).fill(0);
+      for (let iter = 0; iter < 100; iter++) {
+        let changed = false;
+        X.forEach((x, i) => {
+          let best = 0, bestD = Infinity;
+          this.centroids.forEach((c, ci) => {
+            const d = Math.sqrt(x.reduce((s, v, j) => s + (v - c[j]) ** 2, 0));
+            if (d < bestD) { bestD = d; best = ci; }
+          });
+          if (this.labels[i] !== best) { this.labels[i] = best; changed = true; }
+        });
+        const sums = Array.from({ length: k }, () => ({ count: 0, vec: new Array(X[0].length).fill(0) }));
+        X.forEach((x, i) => {
+          const c = this.labels[i];
+          sums[c].count++;
+          x.forEach((v, j) => sums[c].vec[j] += v);
+        });
+        sums.forEach((s, ci) => {
+          if (s.count > 0) this.centroids[ci] = s.vec.map(v => v / s.count);
+        });
+        if (!changed) break;
+      }
+    }
+    predict(x) {
+      let best = 0, bestD = Infinity;
+      this.centroids.forEach((c, ci) => {
+        const d = Math.sqrt(x.reduce((s, v, j) => s + (v - c[j]) ** 2, 0));
+        if (d < bestD) { bestD = d; best = ci; }
+      });
+      return best;
+    }
   }
 
   // ── Sentiment Analyzer ────────────────────────────────────────────────────
@@ -550,18 +634,39 @@ NB.EXECUTOR = (() => {
         V.log(`📈 Created Linear Regression "${inp.model}"`, 'success');
         break;
       }
+      case 'create_logistic_reg': {
+        ctx.models[inp.model] = { type: 'logreg', clf: new LogisticRegression() };
+        V.log(`📊 Created Logistic Regression "${inp.model}"`, 'success');
+        break;
+      }
+      case 'create_kmeans': {
+        ctx.models[inp.model] = { type: 'kmeans', clf: new KMeans(+inp.k), k: +inp.k };
+        V.log(`🎯 Created K-Means clusterer "${inp.model}" (k=${inp.k})`, 'success');
+        break;
+      }
       case 'train_model': {
         const mdl = ctx.models[inp.model];
         if (!mdl) { V.log(`❌ Model "${inp.model}" not found. Create it first!`, 'error'); break; }
         const rows = ctx.trainData || ctx.dataset?.data;
         if (!rows || !rows.length) { V.log('⚠️ Load and split a dataset first!', 'warn'); break; }
-        const { X, Y } = getXY(rows);
         V.setCharacterEmotion('working');
-        V.log(`🏋️ Training "${inp.model}" on ${X.length} examples...`, 'info');
-        await sleep(300);
-        mdl.clf.train(X, Y);
-        mdl.trainData = rows;
-        V.log(`✅ Training complete for "${inp.model}"!`, 'success');
+        if (mdl.type === 'kmeans') {
+          const X = rows.map(r => r.slice(0, -1).map(Number));
+          V.log(`🏋️ Clustering "${inp.model}" on ${X.length} examples (k=${mdl.k})...`, 'info');
+          await sleep(300);
+          mdl.clf.train(X);
+          mdl.trainData = rows;
+          const counts = {};
+          mdl.clf.labels.forEach(l => counts[l] = (counts[l] || 0) + 1);
+          V.log(`✅ Clustering complete! Groups: ${Object.entries(counts).map(([k, v]) => `cluster ${k}: ${v}`).join(', ')}`, 'success');
+        } else {
+          const { X, Y } = getXY(rows);
+          V.log(`🏋️ Training "${inp.model}" on ${X.length} examples...`, 'info');
+          await sleep(300);
+          mdl.clf.train(X, Y);
+          mdl.trainData = rows;
+          V.log(`✅ Training complete for "${inp.model}"!`, 'success');
+        }
         V.setCharacterEmotion('happy');
         G.trackStat('models_trained');
         break;
@@ -610,6 +715,15 @@ NB.EXECUTOR = (() => {
         const a1 = computeAccuracy(m1.clf, rows), a2 = computeAccuracy(m2.clf, rows);
         V.showBarChart([inp.m1, inp.m2], [Math.round(a1*100), Math.round(a2*100)], 'Model Accuracy Comparison (%)', ['#3B82F6', '#10B981']);
         V.log(`⚔️ ${inp.m1}: ${Math.round(a1*100)}% vs ${inp.m2}: ${Math.round(a2*100)}%`, 'info');
+        break;
+      }
+      case 'show_clusters': {
+        const mdl = ctx.models[inp.model];
+        if (!mdl || mdl.type !== 'kmeans') { V.log(`❌ K-Means model "${inp.model}" not found. Create and train it first!`, 'error'); break; }
+        const rows = mdl.trainData || ctx.dataset?.data;
+        if (!rows || !mdl.clf.labels.length) { V.log('⚠️ Train your K-Means model first!', 'warn'); break; }
+        V.showClusterPlot(rows, mdl.clf.labels, mdl.clf.centroids, +inp.x, +inp.y, ctx.dataset?.headers);
+        V.log(`🗺️ Cluster plot shown for "${inp.model}"`, 'info');
         break;
       }
 

@@ -261,6 +261,58 @@ NB.VISUALIZER = (() => {
     });
   }
 
+  // ── Cluster Plot (K-Means) ─────────────────────────────────────────────────
+  function showClusterPlot(rows, labels, centroids, xCol, yCol, headers) {
+    if (!rows || !rows.length) { showMessage('⚠️ No data to plot!'); return; }
+    clearStage();
+    const chartEl = document.getElementById('stage-chart');
+    if (!chartEl) return;
+    chartEl.classList.remove('hidden');
+    if (activeChart) activeChart.destroy();
+
+    const colors = ['#8B5CF6', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#06B6D4', '#EC4899', '#84CC16', '#F97316', '#6366F1'];
+    const k = centroids.length;
+    const xName = headers?.[xCol] || `Col ${xCol}`;
+    const yName = headers?.[yCol] || `Col ${yCol}`;
+
+    const datasets = Array.from({ length: k }, (_, ci) => ({
+      label: `Cluster ${ci}`,
+      data: rows.filter((_, i) => labels[i] === ci).map(r => ({ x: +r[xCol] || 0, y: +r[yCol] || 0 })),
+      backgroundColor: colors[ci % colors.length] + 'CC',
+      pointRadius: 5,
+    }));
+
+    if (centroids.length) {
+      datasets.push({
+        label: 'Centroids',
+        data: centroids.map(c => ({ x: +c[xCol] || 0, y: +c[yCol] || 0 })),
+        backgroundColor: '#FFFFFF',
+        borderColor: '#FFFFFF',
+        borderWidth: 2,
+        pointRadius: 9,
+        pointStyle: 'star',
+      });
+    }
+
+    activeChart = new Chart(chartEl, {
+      type: 'scatter',
+      data: { datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          title: { display: true, text: `K-Means Clusters: ${xName} vs ${yName}`, color: '#F1F5F9', font: { size: 13, family: 'Nunito', weight: '700' } },
+          legend: { labels: { color: '#D1D5DB', font: { family: 'Nunito' } } },
+        },
+        scales: {
+          x: { title: { display: true, text: xName, color: '#94A3B8' }, ticks: { color: '#94A3B8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+          y: { title: { display: true, text: yName, color: '#94A3B8' }, ticks: { color: '#94A3B8' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        },
+        animation: { duration: 600 }
+      }
+    });
+    setCharacterEmotion('excited');
+  }
+
   // ── Prediction Result Card ────────────────────────────────────────────────
   function showPredictionCard(label, confidence, allProbs) {
     const confPct = confidence != null ? Math.round(confidence * 100) : null;
@@ -589,6 +641,6 @@ NB.VISUALIZER = (() => {
     showFilteredImage,
     showDetectionOverlay,
     showImageWithDetections: showDetectionOverlay,  // legacy alias
-    showClassDistribution, showAccuracyResult,
+    showClassDistribution, showAccuracyResult, showClusterPlot,
   };
 })();

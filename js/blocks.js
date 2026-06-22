@@ -93,6 +93,18 @@ NB.BLOCKS = [
     xp: 20, level: 2,
   },
   {
+    id: 'create_logistic_reg', category: 'ml', shape: 'stack',
+    label: ['create logistic regression named', { type: 'text', name: 'model', default: 'myLogReg', width: 75 }],
+    tooltip: '📊 Logistic Regression: predicts categories by learning probability curves. Perfect for yes/no decisions like survival or spam!',
+    xp: 20, level: 2,
+  },
+  {
+    id: 'create_kmeans', category: 'ml', shape: 'stack',
+    label: ['create K-Means  k =', { type: 'number', name: 'k', default: 3, min: 2, max: 10 }, 'named', { type: 'text', name: 'model', default: 'myKMeans', width: 70 }],
+    tooltip: '🎯 K-Means Clustering: groups similar data points into k clusters — no labels needed! Finds hidden patterns in your data.',
+    xp: 20, level: 2,
+  },
+  {
     id: 'train_model', category: 'ml', shape: 'stack',
     label: ['train', { type: 'text', name: 'model', default: 'myKNN', width: 70 }, 'on dataset'],
     tooltip: '🏋️ Trains your model! It reads all the training examples and learns the patterns.',
@@ -121,6 +133,12 @@ NB.BLOCKS = [
     label: ['compare models', { type: 'text', name: 'm1', default: 'myKNN', width: 65 }, 'vs', { type: 'text', name: 'm2', default: 'myTree', width: 65 }],
     tooltip: '⚔️ Side-by-side accuracy comparison of two models. Which one learns better?',
     xp: 25, level: 3,
+  },
+  {
+    id: 'show_clusters', category: 'ml', shape: 'stack',
+    label: ['show clusters for', { type: 'text', name: 'model', default: 'myKMeans', width: 70 }, 'x col', { type: 'number', name: 'x', default: 0, min: 0, max: 20 }, 'y col', { type: 'number', name: 'y', default: 1, min: 0, max: 20 }],
+    tooltip: '🗺️ Scatter plot of your data colored by cluster. See how K-Means grouped similar points together!',
+    xp: 20, level: 2,
   },
 
   // ══════════════════════════════════════════════════════════════════

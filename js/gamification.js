@@ -110,6 +110,34 @@ NB.GAMIFICATION = (() => {
         { desc: 'Visualize the agent navigating',       blockId: 'visualize_agent',  done: false },
       ]
     },
+    {
+      id: 'mission_7',
+      name: 'Logistic Classifier',
+      icon: '📊',
+      description: 'Build and test a logistic regression model for yes/no predictions!',
+      xpReward: 120,
+      steps: [
+        { desc: 'Load the Titanic Survival dataset',    blockId: 'load_dataset',          done: false },
+        { desc: 'Split data into training & test sets', blockId: 'split_data',            done: false },
+        { desc: 'Create a logistic regression model',   blockId: 'create_logistic_reg',   done: false },
+        { desc: 'Train your model on the dataset',      blockId: 'train_model',           done: false },
+        { desc: 'Show the accuracy of your model',      blockId: 'show_accuracy',         done: false },
+      ]
+    },
+    {
+      id: 'mission_8',
+      name: 'Cluster Explorer',
+      icon: '🎯',
+      description: 'Discover hidden groups in data with K-Means clustering!',
+      xpReward: 120,
+      steps: [
+        { desc: 'Load the Iris Flowers dataset',        blockId: 'load_dataset',    done: false },
+        { desc: 'Normalize your data',                  blockId: 'normalize_data',  done: false },
+        { desc: 'Create a K-Means clusterer (k=3)',     blockId: 'create_kmeans',   done: false },
+        { desc: 'Train your clusterer on the dataset',  blockId: 'train_model',     done: false },
+        { desc: 'Show the cluster visualization',       blockId: 'show_clusters',   done: false },
+      ]
+    },
   ];
 
   // ── State ─────────────────────────────────────────────────────────────────
