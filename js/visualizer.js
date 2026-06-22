@@ -626,6 +626,208 @@ NB.VISUALIZER = (() => {
     setCharacterEmotion(pct >= 75 ? 'happy' : pct >= 50 ? 'thinking' : 'sad');
   }
 
+  // ── Regression Line Chart ──────────────────────────────────────────────────
+  function showRegressionLine(points, line, xName, yName, modelName) {
+    clearStage();
+    const pts = points.map((p) => ({ x: +p.x, y: +p.y }));
+    let ln = line.map((p) => ({ x: +p.x, y: +p.y }));
+    ln = ln.sort((a, b) => a.x - b.x);
+
+    // compute axis ranges with padding
+    const allX = pts.map((p) => p.x).concat(ln.map((p) => p.x));
+    const allY = pts.map((p) => p.y).concat(ln.map((p) => p.y));
+    let xMin = Math.min(...allX),
+      xMax = Math.max(...allX);
+    let yMin = Math.min(...allY),
+      yMax = Math.max(...allY);
+
+    // handle errors in the dataset
+    if (!isFinite(xMin) || !isFinite(xMax)) {
+      xMin = 0;
+      xMax = 1;
+    }
+    if (!isFinite(yMin) || !isFinite(yMax)) {
+      yMin = 0;
+      yMax = 1;
+    }
+
+    const chartEl = document.getElementById('stage-chart');
+    if (!chartEl) return;
+    chartEl.classList.remove('hidden');
+    if (activeChart) activeChart.destroy();
+    console.log(xMin)
+    console.log(xMax)
+    activeChart = new Chart(chartEl, {
+      type: 'scatter',
+      data: {
+        datasets: [
+          {
+            label: 'Data points',
+            data: pts,
+            backgroundColor: 'rgba(59,130,246,0.65)',
+            borderColor: '#3B82F6',
+            borderWidth: 1,
+            pointRadius: 5,
+            order: 2,
+          },
+          {
+            label: 'Regression line',
+            data: line,
+            type: 'line',
+            borderColor: '#F59E0B',
+            backgroundColor: 'rgba(245,158,11,0.08)',
+            borderWidth: 3,
+            pointRadius: 0,
+            tension: 0,
+            fill: false,
+            order: 1,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: `${modelName}: ${xName} vs ${yName}`,
+            color: '#F1F5F9',
+            font: { size: 13, family: 'Nunito', weight: '700' },
+          },
+          legend: { labels: { color: '#D1D5DB', font: { family: 'Nunito' } } },
+        },
+        scales: {
+          x: {
+            type: 'linear',
+            title: { display: true, text: xName, color: '#94A3B8' },
+            ticks: { color: '#94A3B8' },
+            grid: { color: 'rgba(255,255,255,0.05)' },
+            
+          },
+          y: {
+            title: { display: true, text: yName, color: '#94A3B8' },
+            ticks: { color: '#94A3B8' },
+            grid: { color: 'rgba(255,255,255,0.08)' },
+            
+          },
+        },
+        animation: { duration: 700 },
+      },
+    });
+    setCharacterEmotion('happy');
+  }
+
+  // ── ROC Curve ──────────────────────────────────────────────────────────────
+  function showROCCurve(fpr, tpr, auc, modelName, posClass, negClass, isMulticlass) {
+    clearStage();
+    const chartEl = document.getElementById('stage-chart');
+    if (!chartEl) return;
+    chartEl.classList.remove('hidden');
+    if (activeChart) activeChart.destroy();
+
+    const aucPct = Math.round(auc * 100);
+    const rocPoints = fpr.map((x, i) => ({ x, y: tpr[i] }));
+    const diagPoints = [{ x: 0, y: 0 }, { x: 1, y: 1 }];
+    const classNote = isMulticlass ? ` ("${posClass}" vs rest)` : '';
+
+    activeChart = new Chart(chartEl, {
+      type: 'scatter',
+      data: {
+        datasets: [
+          {
+            label: 'Random guess',
+            data: diagPoints,
+            type: 'line',
+            borderColor: 'rgba(148,163,184,0.4)',
+            borderDash: [6, 4],
+            borderWidth: 2,
+            pointRadius: 0,
+            fill: false,
+          },
+          {
+            label: `ROC curve`,
+            data: rocPoints,
+            type: 'line',
+            borderColor: '#8B5CF6',
+            backgroundColor: 'rgba(139,92,246,0.12)',
+            borderWidth: 3,
+            pointRadius: 0,
+            tension: 0.1,
+            fill: true,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: `ROC — ${modelName}${classNote}  ·  AUC ${aucPct}%  ·  +${posClass} / −${negClass}`,
+            color: '#F1F5F9',
+            font: { size: 12, family: 'Nunito', weight: '700' },
+          },
+          legend: { labels: { color: '#D1D5DB', font: { family: 'Nunito', size: 11 } } },
+        },
+        scales: {
+          x: {
+            type: 'linear',
+            min: 0, max: 1,
+            title: { display: true, text: 'False Positive Rate', color: '#94A3B8' },
+            ticks: { color: '#94A3B8' },
+            grid: { color: 'rgba(255,255,255,0.05)' },
+            
+          },
+          y: {
+            min: 0, max: 1,
+            title: { display: true, text: 'True Positive Rate', color: '#94A3B8' },
+            ticks: { color: '#94A3B8' },
+            grid: { color: 'rgba(255,255,255,0.08)' },
+          },
+        },
+        animation: { duration: 800 },
+      },
+    });
+    setCharacterEmotion(auc >= 0.8 ? 'excited' : 'thinking');
+  }
+
+  // ── Correlation Heatmap ────────────────────────────────────────────────────
+  function corrHeatColor(r) {
+    const abs = Math.abs(r);
+    if (r >= 0) return `rgba(16,185,129,${0.15 + abs * 0.85})`;
+    return `rgba(239,68,68,${0.15 + abs * 0.85})`;
+  }
+
+  function showCorrelationHeatmap(headers, matrix) {
+    const n = headers.length;
+    let html = `
+      <div class="corr-heatmap-wrap">
+        <div class="corr-heatmap-title">🔥 Correlation Heatmap</div>
+        <div class="corr-heatmap-sub">Pearson correlation (−1 to +1) between numeric columns</div>
+        <table class="corr-heatmap-table">
+          <thead><tr><th></th>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+          <tbody>
+            ${matrix.map((row, i) => `
+              <tr>
+                <th>${headers[i]}</th>
+                ${row.map((r, j) => {
+                  const val = Math.round(r * 100) / 100;
+                  const textColor = Math.abs(r) > 0.5 ? '#fff' : 'var(--text-2)';
+                  return `<td style="background:${corrHeatColor(r)};color:${textColor}" title="${headers[i]} × ${headers[j]}">${val.toFixed(2)}</td>`;
+                }).join('')}
+              </tr>`).join('')}
+          </tbody>
+        </table>
+        <div class="corr-heatmap-legend">
+          <span class="corr-neg">■ Negative</span>
+          <span class="corr-zero">■ None</span>
+          <span class="corr-pos">■ Positive</span>
+        </div>
+      </div>`;
+    showVisualization(html);
+    setCharacterEmotion('thinking');
+  }
+
   return {
     log, clearConsole,
     clearStage, showMessage, showVisualization,
@@ -642,5 +844,6 @@ NB.VISUALIZER = (() => {
     showDetectionOverlay,
     showImageWithDetections: showDetectionOverlay,  // legacy alias
     showClassDistribution, showAccuracyResult, showClusterPlot,
+    showRegressionLine, showROCCurve, showCorrelationHeatmap,
   };
 })();

@@ -1024,6 +1024,18 @@ html, body {
 .cm-correct-dot { color: #10B981; }
 .cm-wrong-dot { color: #EF4444; }
 
+/* Correlation heatmap */
+.corr-heatmap-wrap { overflow-x: auto; padding: 8px; width: 100%; }
+.corr-heatmap-title { font-size: 0.78rem; font-weight: 800; color: var(--text-2); margin-bottom: 2px; }
+.corr-heatmap-sub { font-size: 0.65rem; color: var(--text-3); margin-bottom: 10px; }
+.corr-heatmap-table { border-collapse: collapse; font-size: 0.62rem; font-family: 'Fira Code', monospace; }
+.corr-heatmap-table th { background: var(--surface-2); color: var(--text-3); padding: 4px 6px; font-weight: 700; white-space: nowrap; border: 1px solid var(--border); max-width: 72px; overflow: hidden; text-overflow: ellipsis; }
+.corr-heatmap-table td { padding: 4px 6px; text-align: center; font-weight: 700; border: 1px solid var(--border); min-width: 42px; transition: background 0.3s; }
+.corr-heatmap-legend { display: flex; gap: 12px; font-size: 0.62rem; color: var(--text-3); margin-top: 8px; }
+.corr-neg { color: #EF4444; }
+.corr-zero { color: var(--text-3); }
+.corr-pos { color: #10B981; }
+
 /* Sentiment card */
 .sentiment-card { text-align: center; padding: 16px; }
 .sent-label { font-size: 1.1rem; font-weight: 900; margin: 8px 0; }
