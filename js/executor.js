@@ -1144,7 +1144,26 @@ NB.EXECUTOR = (() => {
     switch (id) {
       // ── DATA ──
       case "load_dataset": {
-        const ds = DATASETS[inp.dataset];
+        let ds = null;
+        if (inp.dataset === "Custom CSV") {
+          // try to load the temp dataset populated by the Kaggle search modal
+          ds = window.NB_CUSTOM_DATASET || null;
+          if (!ds) {
+            V.log(
+              "⚠️ No custom dataset available. Use the Kaggle search to pick one.",
+              "warn",
+            );
+            break;
+          }
+          // ensure headers/data fields
+          ds = {
+            name: ds.name || "Custom CSV",
+            headers: ds.headers || [],
+            data: ds.data || [],
+          };
+        } else {
+          ds = DATASETS[inp.dataset];
+        }
         if (!ds) {
           V.log(`❌ Dataset "${inp.dataset}" not found`, "error");
           break;

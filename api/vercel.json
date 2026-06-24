@@ -1,0 +1,14 @@
+{
+  "builds": [
+    {
+      "src": "/kaggle_fetch.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/kaggle_fetch.py"
+    }
+  ]
+}
