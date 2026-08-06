@@ -21,6 +21,7 @@ window.addEventListener('DOMContentLoaded', () => {
   // Initialize modules
   NB.GAMIFICATION.init();
   NB.WORKSPACE.init();
+  if (NB.AUTH) NB.AUTH.init();
   NB.VISUALIZER.setCharacterEmotion('idle');
 
   // Initial XP UI render

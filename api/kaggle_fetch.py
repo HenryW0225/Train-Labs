@@ -1,4 +1,3 @@
-from kaggle.api.kaggle_api_extended import KaggleApi
 import kagglehub
 from kagglehub import KaggleDatasetAdapter
 from fastapi import APIRouter, FastAPI, HTTPException
@@ -32,21 +31,32 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-kaggle_api: KaggleApi | None = None
-try:
-    kaggle_api = KaggleApi()
-    kaggle_api.authenticate()
-except Exception as e:
-    print("Error authenticating: {}".format(e))
+_kaggle_api_instance: Any | None = None
+_kaggle_api_attempted: bool = False
 
+def get_kaggle_api() -> Any | None:
+    global _kaggle_api_instance, _kaggle_api_attempted
+    if not _kaggle_api_attempted:
+        _kaggle_api_attempted = True
+        try:
+            from kaggle.api.kaggle_api_extended import KaggleApi
+            api = KaggleApi()
+            api.authenticate()
+            _kaggle_api_instance = api
+        except (Exception, SystemExit) as e:
+            print(f"Kaggle API unauthenticated: {e}")
+            _kaggle_api_instance = None
+    return _kaggle_api_instance
 
-def require_kaggle_api() -> KaggleApi:
-    if kaggle_api is None:
+def require_kaggle_api() -> Any:
+
+    api = get_kaggle_api()
+    if api is None:
         raise HTTPException(
             status_code=503,
             detail="Kaggle API is not authenticated. Configure kaggle.json locally and restart the API server.",
         )
-    return kaggle_api
+    return api
 
 
 @router.get("/datasets/search")
@@ -101,9 +111,10 @@ async def read_dataset_preview(ref: str, file: str | None = None, lines: int = 1
 
     # try to populate file list via Kaggle API (best-effort)
     files = None
-    if kaggle_api is not None:
+    api_inst = get_kaggle_api()
+    if api_inst is not None:
         try:
-            files_list_obj = kaggle_api.dataset_list_files(ref)
+            files_list_obj = api_inst.dataset_list_files(ref)
             files = [f.name for f in files_list_obj.files] if hasattr(files_list_obj, "files") else None
             if files:
                 DATASET_CACHE.setdefault(ref, {})["files"] = files
@@ -179,9 +190,10 @@ async def read_dataset_preview(ref: str, file: str | None = None, lines: int = 1
 async def read_dataset(ref: str, file: str | None = None):
     try:
         target_file = file
-        if not target_file and kaggle_api is not None:
+        api_inst = get_kaggle_api()
+        if not target_file and api_inst is not None:
             try:
-                files_list_obj = kaggle_api.dataset_list_files(ref)
+                files_list_obj = api_inst.dataset_list_files(ref)
                 files = [f.name for f in files_list_obj.files] if hasattr(files_list_obj, "files") else []
                 if files:
                     csvs = [f for f in files if f.lower().endswith(".csv")]

@@ -115,6 +115,13 @@
           >
             ❓ Help
           </button>
+          <button
+            id="account-btn"
+            class="header-btn"
+            title="Create Account or Log In"
+          >
+            👤 Create Account
+          </button>
         </div>
       </header>
 
@@ -474,6 +481,80 @@
       </div>
     </div>
 
+    <!-- Auth Modal -->
+    <div id="auth-modal" class="modal hidden" role="dialog" aria-labelledby="auth-modal-title">
+      <div class="modal-overlay"></div>
+      <div class="modal-content auth-modal">
+        <button class="modal-close" aria-label="Close authentication window">✕</button>
+
+        <div id="auth-logged-out-view">
+          <div class="auth-header">
+            <h2 id="auth-modal-title">⚡ Train Labs Account</h2>
+            <p class="auth-subtitle">Log in or create an account to save your progress</p>
+          </div>
+
+          <div class="auth-tabs" role="tablist">
+            <button id="tab-login" class="auth-tab active" role="tab">Log In</button>
+            <button id="tab-register" class="auth-tab" role="tab">Create Account</button>
+          </div>
+
+          <div id="auth-feedback" class="auth-feedback hidden"></div>
+
+          <!-- Login Form -->
+          <div id="login-form" class="auth-form-container">
+            <form id="login-form-el">
+              <div class="form-group">
+                <label for="login-username">Username</label>
+                <input type="text" id="login-username" class="auth-input" placeholder="e.g. alex_runner" required autocomplete="username" />
+              </div>
+              <div class="form-group">
+                <label for="login-password">Password</label>
+                <input type="password" id="login-password" class="auth-input" placeholder="••••••••" required autocomplete="current-password" />
+              </div>
+              <button type="submit" class="modal-btn auth-submit-btn">Log In</button>
+            </form>
+          </div>
+
+          <!-- Register Form -->
+          <div id="register-form" class="auth-form-container hidden">
+            <form id="register-form-el">
+              <div class="form-group">
+                <label for="reg-username">Username *</label>
+                <input type="text" id="reg-username" class="auth-input" placeholder="e.g. alex_runner" required autocomplete="username" />
+              </div>
+              <div class="form-group">
+                <label for="reg-fullname">Full Name</label>
+                <input type="text" id="reg-fullname" class="auth-input" placeholder="e.g. Alex Smith" autocomplete="name" />
+              </div>
+              <div class="form-group">
+                <label for="reg-email">Email Address</label>
+                <input type="email" id="reg-email" class="auth-input" placeholder="alex@example.com" autocomplete="email" />
+              </div>
+              <div class="form-group">
+                <label for="reg-password">Password *</label>
+                <input type="password" id="reg-password" class="auth-input" placeholder="At least 6 characters" required autocomplete="new-password" />
+              </div>
+              <button type="submit" class="modal-btn auth-submit-btn">Create Account</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Logged-in View -->
+        <div id="auth-logged-in-view" class="hidden">
+          <div class="profile-card">
+            <div class="profile-avatar">👤</div>
+            <h3 id="user-profile-name">User Name</h3>
+            <p id="user-profile-email" class="profile-email">email@example.com</p>
+            <div class="profile-status">
+              <span class="status-badge">● Active Session</span>
+            </div>
+            <button id="logout-btn" class="modal-btn auth-logout-btn">Log Out</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
     <!-- Block Tooltip -->
     <div id="block-tooltip" class="hidden" role="tooltip">
       <div id="tooltip-text"></div>
@@ -487,6 +568,7 @@
     <script src="js/visualizer.js"></script>
     <script src="js/executor.js"></script>
     <script src="js/workspace.js"></script>
+    <script src="js/auth.js"></script>
     <script src="js/app.js"></script>
   </body>
 </html>
